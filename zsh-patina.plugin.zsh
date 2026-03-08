@@ -1,7 +1,6 @@
 # ensure the daemon is running
 _zsh_patina_ensure_running() {
     local daemon_path="$_zsh_patina_path/target/release/zsh-patina"
-    echo $daemon_path
 
     if [[ ! -x "$daemon_path" ]]; then
         echo "zsh-patina: daemon not found or not executable: $daemon_path" >&2
