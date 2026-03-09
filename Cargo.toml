@@ -11,4 +11,8 @@ figment = { version = "0.10.19", features = ["toml"] }
 libc = "0.2.182"
 rayon = "1.11.0"
 serde = { version = "1.0.228", features = ["derive"] }
-syntect = { version = "5.3.0", default-features = false, features = ["parsing", "default-syntaxes", "plist-load", "regex-fancy"] }
+syntect = { version = "5.3.0", default-features = false, features = ["parsing", "regex-fancy"] }
+
+[build-dependencies]
+anyhow = "1.0.102"
+syntect = { version = "5.3.0", default-features = false, features = ["default-syntaxes", "plist-load", "regex-fancy", "yaml-load"] }

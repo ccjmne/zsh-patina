@@ -1,8 +1,6 @@
-use std::io::Cursor;
-
 use syntect::{
     easy::HighlightLines,
-    highlighting::{Color, Style, Theme, ThemeSet},
+    highlighting::{Color, Style, Theme},
     parsing::SyntaxSet,
     util::LinesWithEndings,
 };
@@ -54,11 +52,15 @@ pub struct Highlighter {
 
 impl Highlighter {
     pub fn new(max_line_length: usize) -> Self {
-        let syntax_set = SyntaxSet::load_defaults_newlines();
+        let syntax_set: SyntaxSet = syntect::dumps::from_uncompressed_data(include_bytes!(
+            concat!(env!("OUT_DIR"), "/syntax_set.packdump")
+        ))
+        .expect("Unable to load shell syntax");
 
-        let theme_str = include_str!("theme.tmTheme");
-        let mut cursor = Cursor::new(theme_str);
-        let theme = ThemeSet::load_from_reader(&mut cursor).expect("Unable to load theme");
+        let theme: Theme = syntect::dumps::from_reader(
+            &include_bytes!(concat!(env!("OUT_DIR"), "/theme.themedump"))[..],
+        )
+        .expect("Unable to load theme");
 
         Self {
             max_line_length,
