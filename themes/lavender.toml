@@ -2,7 +2,7 @@
 "comment" = "#a0a0a0"
 
 # strings
-"string" = "magenta"
+"string" = "blue"
 
 # regular expressions
 "keyword.operator.regexp" = "yellow"
@@ -14,7 +14,7 @@
 "constant.numeric.integer.decimal.file-descriptor" = "yellow"
 
 # parameters
-"variable.parameter" = "magenta"
+"variable.parameter" = "blue"
 
 # environment variables
 "variable.other" = "yellow"
