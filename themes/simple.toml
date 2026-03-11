@@ -1,0 +1,24 @@
+# comments
+"comment" = "#a0a0a0"
+
+# strings
+"string" = "green"
+
+# parameters
+"variable.parameter" = "blue"
+
+# environment variables
+"variable.other" = "yellow"
+"punctuation.definition.variable" = "yellow"
+
+# keywords
+"keyword" = "blue"
+
+# variable assignments
+"storage" = "blue"
+
+# function names
+"entity.name.function" = "yellow"
+
+# braces
+"punctuation.section" = "yellow"

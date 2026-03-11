@@ -2,13 +2,13 @@
 "comment" = "#a0a0a0"
 
 # strings
-"string" = "green"
+"string" = "magenta"
 
 # regular expressions
-"keyword.operator.regexp" = "green"
+"keyword.operator.regexp" = "yellow"
 
 # escape characters
-"constant.character.escape" = "yellow"
+"constant.character.escape" = "magenta"
 
 # numeric file descriptors (e.g. `2> /dev/null`)
 "constant.numeric.integer.decimal.file-descriptor" = "yellow"
@@ -21,7 +21,7 @@
 "punctuation.definition.variable" = "yellow"
 
 # commands
-"variable.function" = "cyan"
+"variable.function" = "magenta"
 
 # home directory ~
 "variable.language.tilde" = "magenta"
@@ -30,10 +30,10 @@
 "keyword" = "blue"
 
 # variable assignments
-"storage" = "blue"
+"storage" = "magenta"
 
 # support terms (e.g. double braces, let)
-"support" = "cyan"
+"support" = "blue"
 
 # function names
 "entity.name.function" = "yellow"
