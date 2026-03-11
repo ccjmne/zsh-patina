@@ -122,7 +122,7 @@ fn tokenize(config: &Config, input_file: &Option<String>) -> Result<()> {
     let highlighter = Highlighter::new(
         config.highlighting.max_line_length,
         config.highlighting.timeout,
-    );
+    )?;
     let tokens = highlighter.tokenize(&input)?;
 
     // join consecutive tokens

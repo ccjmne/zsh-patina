@@ -1,18 +1,44 @@
 use std::{
+    collections::HashMap,
     ops::Range,
+    str::FromStr,
     time::{Duration, Instant},
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result, bail};
+use serde::Deserialize;
 use syntect::{
     easy::HighlightLines,
-    highlighting::{Color, Style, Theme},
-    parsing::{ClearAmount, ParseState, ScopeStackOp, SyntaxSet},
+    highlighting::{
+        Color, ScopeSelector, ScopeSelectors, Style, StyleModifier, Theme as SyntectTheme,
+        ThemeItem, ThemeSettings,
+    },
+    parsing::{ClearAmount, ParseState, ScopeStack, ScopeStackOp, SyntaxSet},
     util::LinesWithEndings,
 };
 
 fn to_hex(color: Color) -> String {
     format!("#{:0>2x}{:0>2x}{:0>2x}", color.r, color.g, color.b)
+}
+
+fn from_hex(s: &str) -> Result<Color> {
+    let s = s.strip_prefix('#').context("Color must start with '#'")?;
+    if s.len() == 6 {
+        let r = u8::from_str_radix(&s[0..2], 16)?;
+        let g = u8::from_str_radix(&s[2..4], 16)?;
+        let b = u8::from_str_radix(&s[4..6], 16)?;
+        Ok(Color { r, g, b, a: 255 })
+    } else if s.len() == 3 {
+        let mut r = u8::from_str_radix(&s[0..1], 16)?;
+        let mut g = u8::from_str_radix(&s[1..2], 16)?;
+        let mut b = u8::from_str_radix(&s[2..3], 16)?;
+        r |= r << 4;
+        g |= g << 4;
+        b |= b << 4;
+        Ok(Color { r, g, b, a: 255 })
+    } else {
+        bail!("Color must be in the format #RRGGBB or #RGB");
+    }
 }
 
 /// This is similar to how the ansi theme works in Bat
@@ -44,6 +70,60 @@ fn to_ansi_color(color: Color) -> Option<String> {
     }
 }
 
+fn parse_color(s: &str) -> Result<Color> {
+    Ok(match s.to_ascii_lowercase().as_str() {
+        "black" => Color {
+            r: 0,
+            g: 0,
+            b: 0,
+            a: 0,
+        },
+        "red" => Color {
+            r: 1,
+            g: 0,
+            b: 0,
+            a: 0,
+        },
+        "green" => Color {
+            r: 2,
+            g: 0,
+            b: 0,
+            a: 0,
+        },
+        "yellow" => Color {
+            r: 3,
+            g: 0,
+            b: 0,
+            a: 0,
+        },
+        "blue" => Color {
+            r: 4,
+            g: 0,
+            b: 0,
+            a: 0,
+        },
+        "magenta" => Color {
+            r: 5,
+            g: 0,
+            b: 0,
+            a: 0,
+        },
+        "cyan" => Color {
+            r: 6,
+            g: 0,
+            b: 0,
+            a: 0,
+        },
+        "white" => Color {
+            r: 7,
+            g: 0,
+            b: 0,
+            a: 0,
+        },
+        _ => from_hex(s)?,
+    })
+}
+
 /// A span of text with a foreground color. The range is specified in terms of
 /// character indices, not byte indices.
 pub struct Span {
@@ -73,6 +153,12 @@ pub struct Token {
     pub range: Range<usize>,
 }
 
+#[derive(Deserialize)]
+struct Theme {
+    #[serde(flatten)]
+    scopes: HashMap<String, String>,
+}
+
 /// If the command starts with a prefix keyword (e.g. `time`), returns the byte
 /// offset where the rest of the command begins. This can be used to split the
 /// command and process the prefix and the rest separately.
@@ -88,27 +174,50 @@ pub struct Highlighter {
     max_line_length: usize,
     timeout: Duration,
     syntax_set: SyntaxSet,
-    theme: Theme,
+    theme: SyntectTheme,
 }
 
 impl Highlighter {
-    pub fn new(max_line_length: usize, timeout: Duration) -> Self {
+    pub fn new(max_line_length: usize, timeout: Duration) -> Result<Self> {
         let syntax_set: SyntaxSet = syntect::dumps::from_uncompressed_data(include_bytes!(
             concat!(env!("OUT_DIR"), "/syntax_set.packdump")
         ))
         .expect("Unable to load shell syntax");
 
-        let theme: Theme = syntect::dumps::from_reader(
-            &include_bytes!(concat!(env!("OUT_DIR"), "/theme.themedump"))[..],
-        )
-        .expect("Unable to load theme");
+        let theme: Theme = toml::from_slice(include_bytes!("../themes/patina.toml"))
+            .expect("Unable to load theme");
+        let syntect_theme = SyntectTheme {
+            settings: ThemeSettings {
+                foreground: Some(Color::WHITE),
+                ..Default::default()
+            },
+            scopes: theme
+                .scopes
+                .iter()
+                .map(|s| {
+                    Ok(ThemeItem {
+                        scope: ScopeSelectors {
+                            selectors: vec![ScopeSelector {
+                                path: ScopeStack::from_str(s.0)?,
+                                ..Default::default()
+                            }],
+                        },
+                        style: StyleModifier {
+                            foreground: Some(parse_color(s.1)?),
+                            ..Default::default()
+                        },
+                    })
+                })
+                .collect::<Result<_>>()?,
+            ..Default::default()
+        };
 
-        Self {
+        Ok(Self {
             max_line_length,
             timeout,
             syntax_set,
-            theme,
-        }
+            theme: syntect_theme,
+        })
     }
 
     pub fn highlight(&self, command: &str) -> Result<Vec<Span>> {
