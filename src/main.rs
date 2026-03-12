@@ -208,35 +208,37 @@ fn tokenize(config: &Config, input_file: &Option<String>) -> Result<()> {
             let leading_spaces = l.chars().take_while(|c| c.is_whitespace()).count();
             let trailing_spaces = l.chars().rev().take_while(|c| c.is_whitespace()).count();
 
-            let (fg, bg) = if let Some(style) = theme.resolve(&t.scope) {
-                (
-                    parse_term_color(&style.foreground)?,
-                    style
-                        .background
-                        .as_ref()
-                        .map(|c| parse_term_color(c))
-                        .transpose()?,
-                )
+            let color_spec = if let Some(style) = theme.resolve(&t.scope) {
+                let mut color_spec = ColorSpec::new();
+                color_spec.set_fg(Some(parse_term_color(&style.foreground)?));
+                if let Some(bg) = &style.background {
+                    color_spec.set_bg(Some(parse_term_color(bg)?));
+                }
+                if style.bold {
+                    color_spec.set_bold(true);
+                }
+                if style.underline {
+                    color_spec.set_underline(true);
+                }
+                color_spec
             } else {
-                (Color::White, None)
+                let mut color_spec = ColorSpec::new();
+                color_spec.set_fg(Some(Color::White));
+                color_spec
             };
 
-            let mut color_spec = ColorSpec::new();
-            if let Some(bg) = bg {
-                color_spec.set_bg(Some(bg));
-            }
-
             if leading_spaces > 0 {
+                let mut color_spec = color_spec.clone();
                 color_spec.set_fg(Some(Color::Rgb(96, 96, 96)));
                 stdout.set_color(&color_spec)?;
                 write!(stdout, "{}", "·".repeat(leading_spaces))?;
             }
 
-            color_spec.set_fg(Some(fg));
             stdout.set_color(&color_spec)?;
             write!(stdout, "{}", l.trim())?;
 
             if trailing_spaces > 0 {
+                let mut color_spec = color_spec.clone();
                 color_spec.set_fg(Some(Color::Rgb(96, 96, 96)));
                 stdout.set_color(&color_spec)?;
                 write!(stdout, "{}", "·".repeat(trailing_spaces))?;

@@ -6,7 +6,7 @@ use std::{
 use anyhow::{Context, Result};
 use syntect::{
     easy::HighlightLines,
-    highlighting::{Color, Style, Theme as SyntectTheme},
+    highlighting::{Color, FontStyle, Style, Theme as SyntectTheme},
     parsing::{ClearAmount, ParseState, ScopeStackOp, SyntaxSet},
     util::LinesWithEndings,
 };
@@ -63,6 +63,12 @@ pub struct Span {
 
     /// The background color of the span
     pub background_color: Option<String>,
+
+    /// `true` if the text should be shown in bold
+    pub bold: bool,
+
+    /// `true` if the text should be shown underlined
+    pub underline: bool,
 }
 
 /// A token with a scope, line and column number, and range in the input command
@@ -159,6 +165,8 @@ impl Highlighter {
             for r in ranges {
                 let fg = to_ansi_color(r.0.foreground);
                 let bg = to_ansi_color(r.0.background);
+                let bold = r.0.font_style.contains(FontStyle::BOLD);
+                let underline = r.0.font_style.contains(FontStyle::UNDERLINE);
 
                 // this is O(n) but necessary in case the command contains
                 // multi-byte characters
@@ -167,13 +175,15 @@ impl Highlighter {
                 // highlighting `None` or `white` (i.e. default terminal color)
                 // is not necessary
                 if let Some(fg) = fg
-                    && !(fg == "white" && bg.is_none())
+                    && (fg != "white" || bg.is_some() || bold || underline)
                 {
                     result.push(Span {
                         start: i,
                         end: i + len,
                         foreground_color: fg,
                         background_color: bg,
+                        bold,
+                        underline,
                     });
                 }
 

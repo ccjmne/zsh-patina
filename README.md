@@ -104,7 +104,7 @@ The path must be absolute.
 
 ### Creating a custom theme
 
-A theme is a TOML file that maps **scopes** to **styles**. Each key is a scope name (note the quotation marks!) and each value is either a string denoting a foreground [color](#colors) or a [style](#styles). For example:
+A theme is a [TOML](https://toml.io/) file that maps **scopes** to **styles**. Each key is a scope name (note the quotation marks!) and each value is either a string denoting a foreground [color](#colors) or a [style](#styles). For example:
 
 ```toml
 # comments
@@ -138,11 +138,29 @@ ANSI color names use your terminal's color scheme, so the actual appearance depe
 
 ### Styles
 
-A style is a struct with a foreground color and a background color. For example:
+A style is a struct with a foreground color and an optional background color. In addition, you can specify if text should be shown in bold or underlined.
+
+For example:
 
 ```toml
-"keyword" = { foreground = "blue", background = "red" }
+"keyword" = { foreground = "blue", underline = true }
+"variable.function" = { foreground = "cyan", background = "red", bold = true }
 ```
+
+Or in TOML's table syntax:
+
+```toml
+["keyword"]
+foreground = "blue"
+underline = true
+
+["variable.function"]
+foreground = "cyan"
+background = "red"
+bold = true
+```
+
+Note that as of Zsh 5.9, it's unfortunately not possible to show text on the command line in italics as the ZLE (Zsh Line Editor) only supports [bold and underlined](https://zsh.sourceforge.io/Doc/Release/Zsh-Line-Editor.html#Character-Highlighting).
 
 ### Scopes
 

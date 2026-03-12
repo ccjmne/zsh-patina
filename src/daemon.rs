@@ -157,6 +157,8 @@ fn handle_connection(mut stream: UnixStream, highlighter: Arc<Highlighter>) -> R
             && prev.end == span.start
             && prev.foreground_color == span.foreground_color
             && prev.background_color == span.background_color
+            && prev.bold == span.bold
+            && prev.underline == span.underline
         {
             prev.end = span.end;
         } else {
@@ -169,6 +171,12 @@ fn handle_connection(mut stream: UnixStream, highlighter: Arc<Highlighter>) -> R
         let mut message = format!("{} {} fg={}", s.start, s.end, s.foreground_color);
         if let Some(bg) = s.background_color {
             message.push_str(&format!(",bg={}", bg));
+        }
+        if s.bold {
+            message.push_str(",bold");
+        }
+        if s.underline {
+            message.push_str(",underline");
         }
         message.push('\n');
         stream

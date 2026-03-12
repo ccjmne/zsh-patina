@@ -7,8 +7,8 @@ use serde::{
 };
 use syntect::{
     highlighting::{
-        Color, ScopeSelector, ScopeSelectors, StyleModifier, Theme as SyntectTheme, ThemeItem,
-        ThemeSettings,
+        Color, FontStyle, ScopeSelector, ScopeSelectors, StyleModifier, Theme as SyntectTheme,
+        ThemeItem, ThemeSettings,
     },
     parsing::ScopeStack,
 };
@@ -131,12 +131,26 @@ impl<'de> Deserialize<'de> for ThemeSource {
 pub struct Style {
     pub foreground: String,
     pub background: Option<String>,
+    pub bold: bool,
+    pub underline: bool,
 }
 
 impl TryFrom<&Style> for StyleModifier {
     type Error = anyhow::Error;
 
     fn try_from(style: &Style) -> Result<Self> {
+        let font_style = if style.bold || style.underline {
+            let mut fs = FontStyle::empty();
+            if style.bold {
+                fs.set(FontStyle::BOLD, true);
+            }
+            if style.underline {
+                fs.set(FontStyle::UNDERLINE, true);
+            }
+            Some(fs)
+        } else {
+            None
+        };
         Ok(Self {
             foreground: Some(parse_color(&style.foreground)?),
             background: style
@@ -144,7 +158,7 @@ impl TryFrom<&Style> for StyleModifier {
                 .as_ref()
                 .map(|f| parse_color(f))
                 .transpose()?,
-            ..Default::default()
+            font_style,
         })
     }
 }
@@ -181,11 +195,19 @@ impl<'de> Deserialize<'de> for Style {
                 struct Helper {
                     foreground: String,
                     background: Option<String>,
+                    #[serde(default)]
+                    bold: bool,
+                    #[serde(default)]
+                    underline: bool,
                 }
+
                 let h = Helper::deserialize(MapAccessDeserializer::new(map))?;
+
                 Ok(Style {
                     foreground: h.foreground,
                     background: h.background,
+                    bold: h.bold,
+                    underline: h.underline,
                 })
             }
         }
