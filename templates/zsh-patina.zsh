@@ -1,18 +1,18 @@
 zsh-patina() {
-    "$_zsh_patina_path" "$@"
+    "<{zsh_patina_path}>" "$@"
 }
 
 _zsh_patina_resolve_callable() {
     if (( $+aliases[(e)$1] || $+galiases[(e)$1] )); then
-      REPLY="alias"
+        REPLY="alias"
     elif (( $+functions[(e)$1] )); then
-      REPLY=function
+        REPLY=function
     elif (( $+builtins[(e)$1] )); then
-      REPLY=builtin
+        REPLY=builtin
     elif (( $+commands[(e)$1] )); then
-      REPLY=command
+        REPLY=command
     else
-      REPLY=missing
+        REPLY=missing
     fi
 }
 

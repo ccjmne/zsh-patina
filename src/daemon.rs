@@ -1,4 +1,5 @@
 use anyhow::{Context, Result, bail};
+use askama::Template;
 use rayon::ThreadPoolBuilder;
 use std::{
     fs,
@@ -23,6 +24,12 @@ enum Role {
     Parent,
     Child,
     Daemon,
+}
+
+#[derive(Template)]
+#[template(path = "zsh-patina.zsh")]
+struct ActivateTemplate {
+    zsh_patina_path: String,
 }
 
 fn pid_path(data_dir: &Path) -> PathBuf {
@@ -230,11 +237,12 @@ pub fn activate(data_dir: &Path, config: &Config) -> Result<()> {
     if start_daemon_internal(data_dir, config)? == Role::Parent {
         let exe = std::env::current_exe()?;
 
-        let source = include_str!("zsh-patina.plugin.zsh");
-        let source = source.replace("$_zsh_patina_path", exe.to_str().unwrap());
+        let template = ActivateTemplate {
+            zsh_patina_path: exe.to_str().unwrap().to_string(),
+        };
 
         let mut s = stdout().lock();
-        s.write_all(source.as_bytes())?;
+        s.write_all(template.render().unwrap().as_bytes())?;
         s.flush()?;
     }
 
