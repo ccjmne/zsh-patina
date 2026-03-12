@@ -2,8 +2,11 @@ use anyhow::{Context, Result, bail};
 use rayon::ThreadPoolBuilder;
 use std::{
     fs,
-    io::{BufRead, BufReader, Write},
-    os::unix::net::{UnixListener, UnixStream},
+    io::{BufRead, BufReader, Write, stdout},
+    os::{
+        fd::AsRawFd,
+        unix::net::{UnixListener, UnixStream},
+    },
     path::{Path, PathBuf},
     process,
     sync::Arc,
@@ -13,6 +16,13 @@ use crate::{
     Config,
     highlighter::{Highlighter, Span},
 };
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Role {
+    Parent,
+    Child,
+    Daemon,
+}
 
 fn pid_path(data_dir: &Path) -> PathBuf {
     data_dir.join("daemon.pid")
@@ -187,14 +197,33 @@ fn handle_connection(mut stream: UnixStream, highlighter: Arc<Highlighter>) -> R
     Ok(())
 }
 
+pub fn activate(data_dir: &Path, config: &Config) -> Result<()> {
+    if start_daemon_internal(data_dir, config)? == Role::Parent {
+        let exe = std::env::current_exe()?;
+
+        let source = include_str!("zsh-patina.plugin.zsh");
+        let source = source.replace("$_zsh_patina_path", exe.to_str().unwrap());
+
+        let mut s = stdout().lock();
+        s.write_all(source.as_bytes())?;
+        s.flush()?;
+    }
+    Ok(())
+}
+
 pub fn start_daemon(data_dir: &Path, config: &Config) -> Result<()> {
+    start_daemon_internal(data_dir, config)?;
+    Ok(())
+}
+
+fn start_daemon_internal(data_dir: &Path, config: &Config) -> Result<Role> {
     let pid_file = pid_path(data_dir);
 
     if let Some(pid) = read_pid(&pid_file)
         && pid_alive(pid)
     {
         // daemon is already running
-        return Ok(());
+        return Ok(Role::Parent);
     }
 
     // initialize highlighter
@@ -228,7 +257,7 @@ pub fn start_daemon(data_dir: &Path, config: &Config) -> Result<()> {
         }
         _ => {
             // parent: return immediately
-            return Ok(());
+            return Ok(Role::Parent);
         }
     }
 
@@ -245,11 +274,20 @@ pub fn start_daemon(data_dir: &Path, config: &Config) -> Result<()> {
         }
         _ => {
             // intermediate child: exit
-            return Ok(());
+            return Ok(Role::Child);
         }
     }
 
     // from here on, we are a true background daemon ...
+
+    // close all file descriptors so we're really decoupled from the parent
+    // process
+    unsafe {
+        let devnull = std::fs::File::open("/dev/null").unwrap();
+        libc::dup2(devnull.as_raw_fd(), libc::STDIN_FILENO);
+        libc::dup2(devnull.as_raw_fd(), libc::STDOUT_FILENO);
+        libc::dup2(devnull.as_raw_fd(), libc::STDERR_FILENO);
+    }
 
     // write our PID so that `stop` and `status` can find us
     let my_pid = process::id();
@@ -291,7 +329,7 @@ pub fn start_daemon(data_dir: &Path, config: &Config) -> Result<()> {
     let _ = fs::remove_file(pid_file);
     let _ = fs::remove_file(socket_path);
 
-    Ok(())
+    Ok(Role::Daemon)
 }
 
 pub fn stop_daemon(data_dir: &Path) -> Result<()> {

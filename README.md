@@ -29,10 +29,10 @@ In contrast to other Zsh syntax highlighters (e.g. [zsh-syntax-highlighting](htt
    cargo build --release
    ```
 
-3. Add the plugin to the end of your `.zshrc` file:
+3. Initialize the plugin at the end of your `.zshrc` file:
 
    ```shell
-   echo "source ~/.zsh-patina/zsh-patina.plugin.zsh" >> $HOME/.zshrc
+   echo 'eval "$(~/.zsh-patina/target/release/zsh-patina activate)"' >> $HOME/.zshrc
    ```
 
 4. Restart your terminal, or run:
@@ -182,7 +182,7 @@ echo 'for i in 1 2 3; do echo $i; done' | zsh-patina tokenize
 
 In the unlikely case you don't like zsh-patina ☹️, you can remove it as follows (note that these instructions assume you've installed the plugin in `$HOME/.zsh-patina`):
 
-1. Remove the `source ~/.zsh-patina/zsh-patina.plugin.zsh` line from your `.zshrc`.
+1. Remove the `eval "$(~/.zsh-patina/target/release/zsh-patina activate)"` line from your `.zshrc`.
 2. Restart the terminal
 3. Stop the daemon:
 

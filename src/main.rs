@@ -15,7 +15,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::{
-    daemon::{start_daemon, status_daemon, stop_daemon},
+    daemon::{activate, start_daemon, status_daemon, stop_daemon},
     highlighter::{Highlighter, Token},
     theme::{Theme, ThemeSource},
 };
@@ -34,6 +34,20 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Command {
+    /// Initialize zsh-patina in the current shell session.
+    ///
+    /// The command prints out a Zsh script that should be eval'd as follows:
+    ///
+    ///     eval "$(~/.zsh-patina/target/release/zsh-patina activate)"
+    ///
+    /// This initializes zsh-patina in the current shell session and starts the background daemon (if it is not already running).
+    ///
+    /// If you want to initialize it for all future Zsh sessions, run the following command:
+    ///
+    ///     echo 'eval "$(~/.zsh-patina/target/release/zsh-patina activate)"' >> $HOME/.zshrc
+    #[command(verbatim_doc_comment)]
+    Activate,
+
     /// Start the highlighter daemon if it's not already running
     Start,
 
@@ -253,6 +267,7 @@ fn main() -> Result<()> {
     };
 
     match args.command {
+        Command::Activate => activate(&data_dir, &config),
         Command::Start => start_daemon(&data_dir, &config),
         Command::Stop => stop_daemon(&data_dir),
         Command::Restart => {
