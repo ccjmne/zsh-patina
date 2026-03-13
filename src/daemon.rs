@@ -233,6 +233,9 @@ fn start_daemon_internal(data_dir: &Path, config: &Config) -> Result<Role> {
     // initialize highlighter
     let highlighter = Arc::new(Highlighter::new(&config.highlighting)?);
 
+    // highlight something to make sure everything is loaded
+    highlighter.highlight("echo Welcome to zsh-patina!")?;
+
     // Make sure the data directory exists
     fs::create_dir_all(data_dir).context("Unable to create data directory")?;
 
