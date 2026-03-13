@@ -153,11 +153,11 @@ impl Theme {
     pub fn load(source: &ThemeSource) -> Result<Self> {
         Ok(match source {
             ThemeSource::Simple => toml::from_slice(include_bytes!("../themes/simple.toml"))
-                .expect("Unable to load simple theme"),
+                .context("Unable to load simple theme")?,
             ThemeSource::Patina => toml::from_slice(include_bytes!("../themes/patina.toml"))
-                .expect("Unable to load default theme"),
+                .context("Unable to load default theme")?,
             ThemeSource::Lavender => toml::from_slice(include_bytes!("../themes/lavender.toml"))
-                .expect("Unable to load lavender theme"),
+                .context("Unable to load lavender theme")?,
             ThemeSource::File(path) => {
                 let theme_source = fs::read_to_string(path)
                     .with_context(|| format!("Failed to read theme file `{path}'"))?;
