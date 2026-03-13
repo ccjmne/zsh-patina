@@ -41,13 +41,13 @@ enum Command {
     ///
     /// The command prints out a Zsh script that should be eval'd as follows:
     ///
-    ///     eval "$(~/.zsh-patina/target/release/zsh-patina activate)"
+    ///     eval "$(/path/to/zsh-patina activate)"
     ///
     /// This initializes zsh-patina in the current shell session and starts the background daemon (if it is not already running).
     ///
     /// If you want to initialize it for all future Zsh sessions, run the following command:
     ///
-    ///     echo 'eval "$(~/.zsh-patina/target/release/zsh-patina activate)"' >> $HOME/.zshrc
+    ///     echo 'eval "$(/path/to/zsh-patina activate)"' >> $HOME/.zshrc
     #[command(verbatim_doc_comment)]
     Activate,
 

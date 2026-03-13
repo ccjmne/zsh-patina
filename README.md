@@ -4,17 +4,83 @@
 
 The plugin spawns a small background daemon written in Rust. The daemon is shared between Zsh sessions and caches the syntax definition and color theme. Typical commands are highlighted in **less than a millisecond**. Extremely long commands only take a few milliseconds.
 
-Internally, the plugin uses [syntect](https://github.com/trishume/syntect/), which provides **high-quality syntax highlighting** based on [Sublime Text](https://www.sublimetext.com/) syntax definitions. The built-in theme uses the eight ANSI colors and is compatible with all terminal emulators.
+Internally, the plugin relies on [syntect](https://github.com/trishume/syntect/), which provides **high-quality syntax highlighting** based on [Sublime Text](https://www.sublimetext.com/) syntax definitions. The built-in theme uses the eight ANSI colors and is compatible with all terminal emulators.
 
 In contrast to other Zsh syntax highlighters (e.g. [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting/) or [fast-syntax-highlighting](https://github.com/zdharma-continuum/fast-syntax-highlighting)), which use different colors to indicate whether a command or a directory/file exists, zsh-patina performs **static highlighting that solely depends on the characters you enter**. This way, you get a similar experience to editing code in your IDE.
 
 ## Examples
 
-<img src="./.github/screenshot.png" alt="Screenshot" />
+<img src="https://raw.githubusercontent.com/michel-kraemer/zsh-patina/b46a12629765eade89ee817a6f0fd1545a5cf12f/.github/screenshot.png" alt="Screenshot" />
 
 ## How to install
 
-**Prerequisites:** At the moment, there are no pre-compiled binaries. You have to build the plugin yourself. For this, you require [Rust](https://rust-lang.org/) 1.88.0 or higher. The easiest way to install Rust is through [rustup](https://rustup.rs/).
+### Homebrew (for macOS)
+
+1. Install zsh-patina:
+
+   ```shell
+   brew tap michel-kraemer/zsh-patina
+   brew install zsh-patina
+   ```
+
+2. Initialize the plugin at the end of your `.zshrc` file:
+
+   ```shell
+   echo "eval \"\$($(brew --prefix)/bin/zsh-patina activate)\"" >> $HOME/.zshrc
+   ```
+
+3. Restart your terminal, or run:
+
+   ```shell
+   exec zsh
+   ```
+
+### Cargo (for Rust developers)
+
+1. Install zsh-patina:
+
+   ```shell
+   cargo install --locked zsh-patina
+   ```
+
+2. Initialize the plugin at the end of your `.zshrc` file:
+
+   ```shell
+   echo 'eval "$(~/.cargo/bin/zsh-patina activate)"' >> $HOME/.zshrc
+   ```
+
+3. Restart your terminal, or run:
+
+   ```shell
+   exec zsh
+   ```
+
+### Pre-compiled binaries (for everyone)
+
+1. Visit https://github.com/michel-kraemer/zsh-patina/releases and download the appropriate archive for your system. There are binaries for Linux and macOS.
+
+2. Extract the archive to an arbitrary directory. For example, if you want to extract it to `~/.zsh-patina`:
+
+   ```shell
+   mkdir ~/.zsh-patina
+   tar xfz zsh-patina-v1.0.0-aarch64-apple-darwin.tar.gz -C ~/.zsh-patina --strip-components 1
+   ```
+
+3. Initialize the plugin at the end of your `.zshrc` file:
+
+   ```shell
+   echo 'eval "$(~/.zsh-patina/zsh-patina activate)"' >> $HOME/.zshrc
+   ```
+
+4. Restart your terminal, or run:
+
+   ```shell
+   exec zsh
+   ```
+
+### Build from source (for the brave ones)
+
+**Prerequisites:** To build the plugin, you need to have [Rust](https://rust-lang.org/) 1.88.0 or higher on your system. The easiest way to install Rust is through [rustup](https://rustup.rs/).
 
 1. Clone the repository:
 
@@ -100,7 +166,7 @@ To load a custom theme from a file, use the `file:` prefix:
 theme = "file:/path/to/mytheme.toml"
 ```
 
-The path must be absolute. It can start with a tilde `~` (for you home directory), and you can use environment variables such as `$HOME`.
+The path must be absolute. It can start with a tilde `~` (for your home directory), and you can use environment variables such as `$HOME`.
 
 ### Creating a custom theme
 
@@ -180,32 +246,32 @@ echo 'for i in 1 2 3; do echo $i; done' | zsh-patina tokenize
 
 ## How to remove the plugin
 
-In the unlikely case you don't like zsh-patina ☹️, you can remove it as follows (note that these instructions assume you've installed the plugin in `$HOME/.zsh-patina`):
+In the unlikely case you don't like zsh-patina ☹️, you can remove it as follows (note that these instructions assume you've installed the plugin in `~/.zsh-patina`):
 
-1. Remove the `eval "$(~/.zsh-patina/target/release/zsh-patina activate)"` line from your `.zshrc`.
+1. Remove the `eval "$(~/zsh-patina activate)"` line from your `.zshrc`.
 2. Restart the terminal
 3. Stop the daemon:
 
    ```shell
-   ~/.zsh-patina/target/release/zsh-patina stop
+   ~/zsh-patina stop
    ```
 
 4. Delete the directory where `zsh-patina` is installed:
 
    ```shell
-   rm -rf $HOME/.zsh-patina
+   rm -rf ~/.zsh-patina
    ```
 
 5. Delete the plugin's data directory:
 
    ```shell
-   rm -rf $HOME/.local/share/zsh-patina/
+   rm -rf ~/.local/share/zsh-patina/
    ```
 
 6. If you have created a [configuration](#configuration) file, you may also want to delete the configuration directory:
 
    ```shell
-   rm -rf $HOME/.config/zsh-patina/
+   rm -rf ~/.config/zsh-patina/
    ```
 
 ## Contribute
@@ -216,5 +282,4 @@ If you like the plugin as much as I do and want to add a feature or found a bug,
 
 ## License
 
-zsh-patina is released under the **MIT license**. See the [LICENSE](LICENSE) file
-for more information.
+zsh-patina is released under the **MIT license**. See the [LICENSE](LICENSE) file for more information.
