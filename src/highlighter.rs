@@ -46,7 +46,7 @@ pub struct Span {
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StaticStyle {
     /// The foreground color of the span
-    pub foreground_color: String,
+    pub foreground_color: Option<String>,
 
     /// The background color of the span
     pub background_color: Option<String>,
@@ -101,14 +101,10 @@ fn find_prefix_split(command: &str) -> Option<usize> {
 fn resolve_static_style(scope: &str, theme: &Theme) -> Option<StaticStyle> {
     let style = theme.resolve(scope)?;
 
-    let fg = style
-        .foreground
-        .map(|c| c.to_ansi_color())
-        .unwrap_or_else(|| "white".to_string());
+    let fg = style.foreground.map(|c| c.to_ansi_color());
     let bg = style.background.map(|c| c.to_ansi_color());
 
-    // highlighting `white` (i.e. default terminal color) is not necessary
-    if fg == "white" && bg.is_none() && !style.bold && !style.underline {
+    if fg.is_none() && bg.is_none() && !style.bold && !style.underline {
         None
     } else {
         Some(StaticStyle {

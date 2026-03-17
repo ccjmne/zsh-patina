@@ -24,6 +24,6 @@
 "punctuation.section" = "yellow"
 
 # dynamic items
-"dynamic.callable" = "white"
+"dynamic.callable" = {}
 "dynamic.callable.missing" = "red"
 "dynamic.path" = { underline = true }

@@ -55,15 +55,27 @@ fn pid_alive(pid: u32) -> bool {
 
 /// Convert a static style to the format that Zsh's `region_highlight` uses
 fn format_static_style(style: &StaticStyle) -> String {
-    let mut result = format!("fg={}", style.foreground_color);
+    let mut result = String::new();
+    if let Some(fg) = &style.foreground_color {
+        result.push_str(&format!("fg={}", fg));
+    }
     if let Some(bg) = &style.background_color {
-        result.push_str(&format!(",bg={}", bg));
+        if !result.is_empty() {
+            result.push(',');
+        }
+        result.push_str(&format!("bg={}", bg));
     }
     if style.bold {
-        result.push_str(",bold");
+        if !result.is_empty() {
+            result.push(',');
+        }
+        result.push_str("bold");
     }
     if style.underline {
-        result.push_str(",underline");
+        if !result.is_empty() {
+            result.push(',');
+        }
+        result.push_str("underline");
     }
     result
 }
@@ -234,32 +246,38 @@ fn handle_connection(mut stream: UnixStream, highlighter: Arc<Highlighter>) -> R
         // write response
         let message = match s.style {
             SpanStyle::Static(static_style) => {
-                format!(
-                    "{} {} {}\n",
-                    s.start,
-                    s.end,
-                    format_static_style(&static_style)
-                )
+                let fss = format_static_style(&static_style);
+                if fss.is_empty() {
+                    None
+                } else {
+                    Some(format!("{} {} {}\n", s.start, s.end, fss))
+                }
             }
             SpanStyle::Dynamic(dynamic_style) => match dynamic_style {
                 DynamicStyle::Callable => {
-                    format!(
-                        "-DY|{} {}|{}\n",
-                        s.start,
-                        s.end,
-                        highlighter
-                            .callable_choices()
-                            .iter()
-                            .map(|c| format!("{}:{}", c.0, format_static_style(&c.1)))
-                            .collect::<Vec<_>>()
-                            .join(";")
-                    )
+                    let all_fss = highlighter
+                        .callable_choices()
+                        .iter()
+                        .filter_map(|c| {
+                            let fss = format!("{}:{}", c.0, format_static_style(&c.1));
+                            if fss.is_empty() { None } else { Some(fss) }
+                        })
+                        .collect::<Vec<_>>()
+                        .join(";");
+                    if all_fss.is_empty() {
+                        None
+                    } else {
+                        Some(format!("-DY|{} {}|{}\n", s.start, s.end, all_fss))
+                    }
                 }
             },
         };
-        stream
-            .write_all(message.as_bytes())
-            .context("Unable to send response")?;
+
+        if let Some(message) = message {
+            stream
+                .write_all(message.as_bytes())
+                .context("Unable to send response")?;
+        }
     }
 
     Ok(())
