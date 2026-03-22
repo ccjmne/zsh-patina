@@ -11,6 +11,7 @@ use std::{
     path::{Path, PathBuf},
     process,
     sync::Arc,
+    time::Duration,
 };
 
 use crate::{
@@ -158,6 +159,7 @@ fn handle_connection(mut stream: UnixStream, highlighter: Arc<Highlighter>) -> R
     let mut pre_buffer_line_count = 0;
     let mut buffer_line_count = 0;
     let mut pwd = None;
+    let mut cmd = None;
     for h in header.split_ascii_whitespace() {
         let (key, value) = h
             .split_once("=")
@@ -193,6 +195,9 @@ fn handle_connection(mut stream: UnixStream, highlighter: Arc<Highlighter>) -> R
             }
             "pwd" => {
                 pwd = Some(decode_string(value));
+            }
+            "cmd" => {
+                cmd = Some(value);
             }
             _ => {}
         }
@@ -238,6 +243,14 @@ fn handle_connection(mut stream: UnixStream, highlighter: Arc<Highlighter>) -> R
     if client_version.is_none_or(|v| v != PROTOCOL_VERSION) {
         // Return immediately. This will close the connection with an empty
         // response.
+        return Ok(());
+    }
+
+    // handle "hello" command — respond with daemon version
+    if cmd == Some("hello") {
+        stream
+            .write_all(format!("ver={}\n", env!("CARGO_PKG_VERSION")).as_bytes())
+            .context("Unable to send version")?;
         return Ok(());
     }
 
@@ -340,7 +353,8 @@ fn handle_connection(mut stream: UnixStream, highlighter: Arc<Highlighter>) -> R
 pub fn activate(data_dir: &Path, config: &Config) -> Result<()> {
     check_config(config)?;
 
-    if start_daemon_internal(data_dir, config, false)? == Role::Parent {
+    let (role, already_running) = start_daemon_internal(data_dir, config, false)?;
+    if role == Role::Parent {
         let exe = std::env::current_exe()?;
 
         let template = ActivateTemplate {
@@ -353,6 +367,37 @@ pub fn activate(data_dir: &Path, config: &Config) -> Result<()> {
         s.flush()?;
     }
 
+    if already_running {
+        // Check the currently running daemon's version. Restart the it if the
+        // versions don't match.
+        let socket_path = sock_path(data_dir);
+        let mut stream = UnixStream::connect(&socket_path)?;
+
+        let timeout = Duration::from_secs(2);
+        stream.set_read_timeout(Some(timeout))?;
+        stream.set_write_timeout(Some(timeout))?;
+
+        let header = format!(
+            "ver={PROTOCOL_VERSION} cmd=hello buffer_line_count=0 pre_buffer_line_count=0\n"
+        );
+        stream.write_all(header.as_bytes())?;
+
+        let mut response = String::new();
+        let mut reader = BufReader::new(&stream);
+        reader.read_line(&mut response)?;
+
+        let daemon_version = response
+            .split_ascii_whitespace()
+            .find_map(|kv| kv.strip_prefix("ver="));
+        let our_version = env!("CARGO_PKG_VERSION");
+
+        if daemon_version.is_none_or(|v| v != our_version) {
+            // restart daemon
+            stop_daemon(data_dir);
+            start_daemon(data_dir, config, false)?;
+        }
+    }
+
     Ok(())
 }
 
@@ -361,7 +406,11 @@ pub fn start_daemon(data_dir: &Path, config: &Config, no_daemon: bool) -> Result
     Ok(())
 }
 
-fn start_daemon_internal(data_dir: &Path, config: &Config, no_daemon: bool) -> Result<Role> {
+fn start_daemon_internal(
+    data_dir: &Path,
+    config: &Config,
+    no_daemon: bool,
+) -> Result<(Role, bool)> {
     let pid_file = pid_path(data_dir);
 
     if let Some(pid) = read_pid(&pid_file)
@@ -372,7 +421,7 @@ fn start_daemon_internal(data_dir: &Path, config: &Config, no_daemon: bool) -> R
         }
 
         // daemon is already running
-        return Ok(Role::Parent);
+        return Ok((Role::Parent, true));
     }
 
     // initialize highlighter
@@ -410,7 +459,7 @@ fn start_daemon_internal(data_dir: &Path, config: &Config, no_daemon: bool) -> R
             }
             _ => {
                 // parent: return immediately
-                return Ok(Role::Parent);
+                return Ok((Role::Parent, false));
             }
         }
 
@@ -427,7 +476,7 @@ fn start_daemon_internal(data_dir: &Path, config: &Config, no_daemon: bool) -> R
             }
             _ => {
                 // intermediate child: exit
-                return Ok(Role::Child);
+                return Ok((Role::Child, false));
             }
         }
 
@@ -483,10 +532,10 @@ fn start_daemon_internal(data_dir: &Path, config: &Config, no_daemon: bool) -> R
     let _ = fs::remove_file(pid_file);
     let _ = fs::remove_file(socket_path);
 
-    Ok(Role::Daemon)
+    Ok((Role::Daemon, false))
 }
 
-pub fn stop_daemon(data_dir: &Path) -> Result<()> {
+pub fn stop_daemon(data_dir: &Path) {
     let pid_file = pid_path(data_dir);
     if let Some(pid) = read_pid(&pid_file)
         && pid_alive(pid)
@@ -496,7 +545,6 @@ pub fn stop_daemon(data_dir: &Path) -> Result<()> {
         let _ = fs::remove_file(pid_file);
         let _ = fs::remove_file(sock_path(data_dir));
     }
-    Ok(())
 }
 
 pub fn status_daemon(data_dir: &Path) -> Result<()> {

@@ -231,9 +231,12 @@ fn run() -> Result<()> {
     match args.command {
         Command::Activate => activate(&data_dir, &config),
         Command::Start { no_daemon } => start_daemon(&data_dir, &config, no_daemon),
-        Command::Stop => stop_daemon(&data_dir),
+        Command::Stop => {
+            stop_daemon(&data_dir);
+            Ok(())
+        }
         Command::Restart => {
-            stop_daemon(&data_dir)?;
+            stop_daemon(&data_dir);
             start_daemon(&data_dir, &config, false)
         }
         Command::Status => status_daemon(&data_dir),
