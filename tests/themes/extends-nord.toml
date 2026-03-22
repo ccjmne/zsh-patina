@@ -1,0 +1,7 @@
+# A theme that extends nord and overrides a single scope.
+
+"comment" = "red"
+
+[metadata]
+extends = "nord"
+author = "Test User"

@@ -1,0 +1,6 @@
+# Middle of a 3-level chain: chain-a → chain-b → chain-c
+
+"comment" = "red"
+
+[metadata]
+extends = "file:$CARGO_MANIFEST_DIR/tests/themes/chain-c.toml"

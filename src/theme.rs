@@ -1,6 +1,10 @@
-use std::{fmt::Formatter, fs, str::FromStr};
+use std::{
+    fmt::{self, Display, Formatter},
+    fs,
+    str::FromStr,
+};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use rustc_hash::FxHashMap;
 use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
@@ -16,7 +20,7 @@ use syntect::{
 
 use crate::color::Color;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ThemeSource {
     Lavender,
     Nord,
@@ -64,7 +68,25 @@ impl<'de> Deserialize<'de> for ThemeSource {
     }
 }
 
-#[derive(Clone, Copy, Default)]
+impl Display for ThemeSource {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            ThemeSource::Lavender => write!(f, "lavender"),
+            ThemeSource::Nord => write!(f, "nord"),
+            ThemeSource::Patina => write!(f, "patina"),
+            ThemeSource::Simple => write!(f, "simple"),
+            ThemeSource::TokyoNight => write!(f, "tokyonight"),
+            ThemeSource::File(path) => write!(f, "file:{path}"),
+        }
+    }
+}
+
+#[derive(Deserialize, Default, Debug)]
+pub struct ThemeMetadata {
+    pub extends: Option<ThemeSource>,
+}
+
+#[derive(Clone, Copy, Default, Debug)]
 pub struct Style {
     pub foreground: Option<Color>,
     pub background: Option<Color>,
@@ -131,16 +153,39 @@ impl<'de> Deserialize<'de> for Style {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Theme {
+    #[serde(default)]
+    metadata: Option<ThemeMetadata>,
+
     #[serde(flatten)]
     scopes: FxHashMap<String, Style>,
 }
 
 impl Theme {
-    /// Load a built-in theme or a custom one from a file
+    /// Load a built-in theme or a custom one from a file.
+    ///
+    /// If the theme has a `[metadata]` table with an `extends` key, the
+    /// referenced base theme is loaded first and the current theme's scopes are
+    /// merged on top (child scopes override parent scopes with the same key).
+    /// Multi-level chaining is supported. Cycles are detected and reported as
+    /// errors.
     pub fn load(source: &ThemeSource) -> Result<Self> {
-        Ok(match source {
+        Self::load_inner(source, &mut Vec::new())
+    }
+
+    fn load_inner(source: &ThemeSource, visited: &mut Vec<ThemeSource>) -> Result<Self> {
+        if let Some(pos) = visited.iter().position(|s| s == source) {
+            let cycle = visited[pos..]
+                .iter()
+                .chain(std::iter::once(source))
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>();
+            bail!("Cycle detected in theme inheritance: {}", cycle.join(" > "));
+        }
+        visited.push(source.clone());
+
+        let mut theme: Theme = match source {
             ThemeSource::Lavender => toml::from_slice(include_bytes!("../themes/lavender.toml"))
                 .context("Unable to load lavender theme")?,
             ThemeSource::Nord => toml::from_slice(include_bytes!("../themes/nord.toml"))
@@ -159,7 +204,16 @@ impl Theme {
                 toml::from_str(&theme_source)
                     .with_context(|| format!("Failed to parse theme file `{path}'"))?
             }
-        })
+        };
+
+        if let Some(parent_source) = theme.metadata.as_ref().and_then(|m| m.extends.as_ref()) {
+            let parent = Self::load_inner(parent_source, visited)?;
+            let mut merged_scopes = parent.scopes;
+            merged_scopes.extend(theme.scopes);
+            theme.scopes = merged_scopes;
+        }
+
+        Ok(theme)
     }
 
     /// Resolve a scope to a color by looking it up in the theme. If the scope
@@ -257,5 +311,80 @@ impl ScopeMapping {
             u32::MAX => None,
             _ => self.backward_mapping.get(id as usize).map(|s| s.as_str()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_theme(name: &str) -> ThemeSource {
+        ThemeSource::File(format!(
+            "{}/tests/themes/{name}",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+    }
+
+    #[test]
+    fn load_builtin_without_metadata() {
+        let theme = Theme::load(&ThemeSource::Patina).unwrap();
+        assert!(theme.resolve("comment").is_some());
+    }
+
+    #[test]
+    fn extends_builtin_theme() {
+        let theme = Theme::load(&test_theme("extends-nord.toml")).unwrap();
+
+        // "comment" is overridden to red in the child
+        let comment_style = theme.resolve("comment").unwrap();
+        assert_eq!(
+            comment_style.foreground,
+            Some(Color::try_from("red").unwrap())
+        );
+
+        // "string" is inherited from nord (#A3BE8C)
+        let string_style = theme.resolve("string").unwrap();
+        assert_eq!(
+            string_style.foreground,
+            Some(Color::try_from("#A3BE8C").unwrap())
+        );
+    }
+
+    #[test]
+    fn cycle_detected() {
+        let result = Theme::load(&test_theme("cycle-a.toml"));
+        let err = result.unwrap_err();
+        let msg = format!("{err}");
+        assert!(msg.contains("Cycle"), "Expected cycle error, got: {msg}");
+    }
+
+    #[test]
+    fn multi_level_chain() {
+        // chain-a extends chain-b extends chain-c
+        // chain-c: comment=green, string=yellow, keyword=magenta
+        // chain-b: comment=red (overrides green)
+        // chain-a: string=blue (overrides yellow)
+        let theme = Theme::load(&test_theme("chain-a.toml")).unwrap();
+
+        // string overridden by chain-a
+        let string_style = theme.resolve("string").unwrap();
+        assert_eq!(
+            string_style.foreground,
+            Some(Color::try_from("blue").unwrap())
+        );
+
+        // comment overridden by chain-b
+        let comment_style = theme.resolve("comment").unwrap();
+        assert_eq!(
+            comment_style.foreground,
+            Some(Color::try_from("red").unwrap())
+        );
+
+        // keyword from chain-c (base)
+        let keyword_style = theme.resolve("keyword").unwrap();
+        assert_eq!(
+            keyword_style.foreground,
+            Some(Color::try_from("magenta").unwrap())
+        );
     }
 }

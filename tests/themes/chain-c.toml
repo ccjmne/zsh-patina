@@ -1,0 +1,5 @@
+# Base of a 3-level chain: chain-a → chain-b → chain-c
+
+"comment" = "green"
+"string" = "yellow"
+"keyword" = "magenta"

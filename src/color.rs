@@ -1,7 +1,7 @@
 use anyhow::{Context, Result, bail};
 use termcolor::Color as TermColor;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Color {
     Black,
     Red,

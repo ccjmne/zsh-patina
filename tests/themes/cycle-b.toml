@@ -1,0 +1,6 @@
+# Part of a cycle: cycle-b → cycle-a → cycle-b
+
+"comment" = "blue"
+
+[metadata]
+extends = "file:$CARGO_MANIFEST_DIR/tests/themes/cycle-a.toml"
