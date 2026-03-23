@@ -12,13 +12,39 @@ zsh-patina() {
 }
 
 _zsh_patina_resolve_callable() {
-    if (( $+aliases[(e)$1] || $+galiases[(e)$1] )); then
-        REPLY=a
-    elif (( $+functions[(e)$1] )); then
+    local word=$1
+    local -A seen=()
+
+    local IFS=' '$'\t'$'\n' # make sure `read` splits at whitespace
+
+    # resolve alias to real command
+    while (( $+aliases[(e)$word] || $+galiases[(e)$word] )); do
+        # check for cycles
+        (( $+seen[$word] )) && break
+
+        seen[$word]=1
+
+        # extract the first term (n.b. don't use `read -r` as it would not
+        # resolve escaped characters)
+        if (( $+aliases[(e)$word] )); then
+            read word _ <<< "$aliases[$word]"
+        else
+            read word _ <<< "$galiases[$word]"
+        fi
+    done
+
+    if (( ${#seen} )); then
+        # followed at least one alias — check the type of the final target
+        if (( $+functions[(e)$word] || $+builtins[(e)$word] || $+commands[(e)$word] )); then
+            REPLY=a
+        else
+            REPLY=m
+        fi
+    elif (( $+functions[(e)$word] )); then
         REPLY=f
-    elif (( $+builtins[(e)$1] )); then
+    elif (( $+builtins[(e)$word] )); then
         REPLY=b
-    elif (( $+commands[(e)$1] )); then
+    elif (( $+commands[(e)$word] )); then
         REPLY=c
     else
         REPLY=m
