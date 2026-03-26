@@ -186,6 +186,7 @@ _zsh_patina() {
     # behaviour).
     local entry range_start range_end ch
 
+    local -a new_regions
     local line
     while IFS= read -r -u $fd line; do
         [[ -z "$line" ]] && continue
@@ -218,14 +219,18 @@ _zsh_patina() {
             _zsh_patina_resolve_callable $parsed_callable
 
             if (( $+choices[$REPLY] )); then
-                region_highlight+=("$range_start $range_end ${choices[$REPLY]} memo=zsh_patina")
+                new_regions+=("$range_start $range_end ${choices[$REPLY]} memo=zsh_patina")
             elif (( $+choices[e] )); then
-                region_highlight+=("$range_start $range_end ${choices[e]} memo=zsh_patina")
+                new_regions+=("$range_start $range_end ${choices[e]} memo=zsh_patina")
             fi
         else
-            region_highlight+=("$line memo=zsh_patina")
+            new_regions+=("$line memo=zsh_patina")
         fi
     done
+
+    # performance: set region highlight once at the end instead of updating it
+    # on every region
+    region_highlight=("${new_regions[@]}")
 
     # close socket connection
     exec {fd}>&-
@@ -235,6 +240,7 @@ _zsh_patina() {
 
     # end=$EPOCHREALTIME
     # elapsed_ms=$(( (end - start) * 1000 ))
+    # zle -M $elapsed_ms
     # printf "%.3f ms\n" $elapsed_ms
 }
 
