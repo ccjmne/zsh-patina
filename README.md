@@ -423,7 +423,18 @@ zsh-patina check
 
 If the self-check doesn't find any errors, it will print `Everything is OK`. Otherwise, you will get hints about what might be wrong.
 
-If this doesn't help and you cannot solve the issue yourself, please [open an issue](https://github.com/michel-kraemer/zsh-patina/issues).
+### Plugin has no effect on startup, but works after manual `source`
+
+This can happen in minimal environments (e.g. Docker containers or some Linux distributions) where ZLE (Zsh Line Editor) is not fully initialized when the `.zshrc` file is loaded. Make sure your `.zshrc` file calls `compinit` or `bindkey` before the `eval` line:
+
+```zsh
+autoload -Uz compinit && compinit
+eval "$(zsh-patina activate)"
+```
+
+### None of the above
+
+If none of the above has helped, and you cannot solve the issue yourself, please [open an issue](https://github.com/michel-kraemer/zsh-patina/issues).
 
 ## How to remove the plugin
 
