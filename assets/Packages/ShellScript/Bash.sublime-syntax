@@ -186,7 +186,6 @@ contexts:
       set: [cmd-post, repeat-args]
     - match: \btime{{keyword_boundary_end}}
       scope: keyword.control.flow.time.shell
-      pop: true
 
   case-preamble:
     - match: \bin(?=[^\w_-])
@@ -272,17 +271,14 @@ contexts:
   repeat-args:
     - match: ""
       set:
-        - meta_scope: meta.group.repeat.shell
         - include: expression
         - match: (?=\S)
           set:
             - match: \bdo{{keyword_boundary_end}}
               scope: keyword.control.do.shell
-              set: [main, cmd-post]
+              set: [main]
             - match: (?=\S)
-              set: [main, cmd-post]
-            - match: ""
-              pop: true
+              set: [main]
 
   expansion-and-string:
     - include: string
