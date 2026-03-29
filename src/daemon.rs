@@ -581,12 +581,6 @@ fn start_daemon_internal(
         return Ok((Role::Parent, true));
     }
 
-    // initialize highlighter
-    let highlighter = Arc::new(HighlighterBuilder::new(&config.highlighting).build()?);
-
-    // highlight something to make sure everything is loaded
-    highlighter.highlight("echo Welcome to zsh-patina!", None, |_| true)?;
-
     // Make sure the data directory exists
     fs::create_dir_all(data_dir).context("Unable to create data directory")?;
 
@@ -667,12 +661,23 @@ fn start_daemon_internal(
     let socket_path = sock_path(data_dir);
     let _ = fs::remove_file(&socket_path); // ignore errors
 
+    let pool = ThreadPoolBuilder::new().num_threads(4).build().unwrap();
+
+    // initialize highlighter
+    let highlighter = Arc::new(HighlighterBuilder::new(&config.highlighting).build()?);
+
+    // highlight something to make sure everything is loaded - do this in a
+    // background task to not delay the main thread
+    let init_highlighter = Arc::clone(&highlighter);
+    pool.spawn(move || {
+        let _ = init_highlighter.highlight("echo Welcome to zsh-patina!", None, |_| true);
+    });
+
     // bind the Unix domain socket
     let listener = UnixListener::bind(&socket_path)
         .with_context(|| format!("Unable to bind socket {socket_path:?}"))?;
 
     // accept connections
-    let pool = ThreadPoolBuilder::new().num_threads(4).build().unwrap();
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
