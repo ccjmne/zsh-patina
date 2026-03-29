@@ -250,6 +250,12 @@ Set the `theme` option in your configuration file (`~/.config/zsh-patina/config.
 theme = "patina"
 ```
 
+If you want a quick preview of all available themes with highlighted example commands, just run:
+
+```shell
+zsh-patina list-themes
+```
+
 The following built-in themes are available:
 
 | Theme | Description |
@@ -274,12 +280,6 @@ theme = "file:/path/to/mytheme.toml"
 ```
 
 The path must be absolute. It can start with a tilde `~` (for your home directory), and you can use environment variables such as `$HOME`.
-
-If you want a quick preview of all available themes with highlighted example commands, just run:
-
-```shell
-zsh-patina list-themes
-```
 
 ### Creating a custom theme
 
