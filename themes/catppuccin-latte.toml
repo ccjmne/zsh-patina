@@ -1,0 +1,50 @@
+# This theme is based on Catppuccin Latte (Copyright (c) 2021 Catppuccin, released
+# under the MIT license, https://github.com/catppuccin/catppuccin)
+
+# comments
+"comment" = "#9ca0b0"
+
+# strings
+"string" = "#40a02b"
+
+# regular expressions
+"keyword.operator.regexp" = "#ea76cb"
+
+# escape characters
+"constant.character.escape" = "#fe640b"
+
+# numeric file descriptors
+"constant.numeric.integer.decimal.file-descriptor" = "#fe640b"
+
+# parameters
+"variable.parameter" = "#ea76cb"
+
+# environment variables
+"variable.other" = "#fe640b"
+"punctuation.definition.variable" = "#fe640b"
+
+# commands
+"variable.function" = "#1e66f5"
+
+# home directory ~
+"variable.language.tilde" = "#8839ef"
+
+# keywords
+"keyword" = "#8839ef"
+
+# variable assignments
+"storage" = "#8839ef"
+
+# support terms (e.g. double braces, let)
+"support" = "#179299"
+
+# function names
+"entity.name.function" = "#1e66f5"
+
+# braces
+"punctuation.section" = "#209fb5"
+
+# dynamic items
+"dynamic.callable" = "#40a02b"
+"dynamic.callable.missing" = "#d20f39"
+"dynamic.path" = { underline = true }

@@ -1,0 +1,50 @@
+# This theme is based on Catppuccin Mocha (Copyright (c) 2021 Catppuccin, released
+# under the MIT license, https://github.com/catppuccin/catppuccin)
+
+# comments
+"comment" = "#6c7086"
+
+# strings
+"string" = "#a6e3a1"
+
+# regular expressions
+"keyword.operator.regexp" = "#f5c2e7"
+
+# escape characters
+"constant.character.escape" = "#fab387"
+
+# numeric file descriptors
+"constant.numeric.integer.decimal.file-descriptor" = "#fab387"
+
+# parameters
+"variable.parameter" = "#f5c2e7"
+
+# environment variables
+"variable.other" = "#fab387"
+"punctuation.definition.variable" = "#fab387"
+
+# commands
+"variable.function" = "#89b4fa"
+
+# home directory ~
+"variable.language.tilde" = "#cba6f7"
+
+# keywords
+"keyword" = "#cba6f7"
+
+# variable assignments
+"storage" = "#cba6f7"
+
+# support terms (e.g. double braces, let)
+"support" = "#94e2d5"
+
+# function names
+"entity.name.function" = "#89b4fa"
+
+# braces
+"punctuation.section" = "#74c7ec"
+
+# dynamic items
+"dynamic.callable" = "#a6e3a1"
+"dynamic.callable.missing" = "#f38ba8"
+"dynamic.path" = { underline = true }
