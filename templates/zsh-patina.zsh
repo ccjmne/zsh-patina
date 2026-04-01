@@ -196,10 +196,8 @@ _zsh_patina() {
             local remainder="${line#-DY}"
             local args=(${(@s/ /)remainder})
 
-            _zsh_patina_decode_string $args[1]
-            local range_start=$REPLY
-            _zsh_patina_decode_string $args[2]
-            local range_end=$REPLY
+            local range_start=$args[1]
+            local range_end=$args[2]
             _zsh_patina_decode_string $args[3]
             local parsed_callable=$REPLY
             _zsh_patina_decode_string $args[4]
