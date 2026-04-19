@@ -22,7 +22,11 @@ fn is_string_character(c: char) -> bool {
 /// Consume a bang character '!'. Returns the index after the bang if
 /// successful, or None if the character at index i is not a bang.
 fn consume_bang(chars: &[(usize, char)], i: usize) -> Option<usize> {
-    if chars[i].1 == '!' { Some(i + 1) } else { None }
+    if chars[i].1 == '!' {
+        Some(i + 1)
+    } else {
+        None
+    }
 }
 
 /// Consume an event designator. Returns the index after the event designator if
@@ -130,7 +134,11 @@ fn consume_number(chars: &[(usize, char)], i: usize) -> Option<usize> {
     while j < chars.len() && chars[j].1.is_ascii_digit() {
         j += 1;
     }
-    if j > i { Some(j) } else { None }
+    if j > i {
+        Some(j)
+    } else {
+        None
+    }
 }
 
 /// Consume a string starting at index i. Returns the index after the string if
@@ -140,7 +148,11 @@ fn consume_string(chars: &[(usize, char)], i: usize) -> Option<usize> {
     while j < chars.len() && is_string_character(chars[j].1) {
         j += 1;
     }
-    if j > i { Some(j) } else { None }
+    if j > i {
+        Some(j)
+    } else {
+        None
+    }
 }
 
 /// Consume a substitution modifier starting at index i. Returns the index after
@@ -244,16 +256,22 @@ fn consume_until_non_escaped(chars: &[(usize, char)], mut i: usize, until: char)
 /// Consume a word designator starting at index i. Returns the index after the
 /// word designator if successful, or None if there is no valid word designator
 /// at index i.
-fn consume_word_designator(chars: &[(usize, char)], mut i: usize) -> Option<usize> {
+fn consume_word_designator(
+    chars: &[(usize, char)],
+    mut i: usize,
+    allow_number_without_colon: bool,
+) -> Option<usize> {
     // Consume leading colon. If the colon is missing, the next character must
-    // not be a digit. In other words, the colon is optional if the word
-    // designator starts with one of '^', '$', '%', '-', '*'
+    // not be a digit unless zsh would interpret the digit as an omitted-colon
+    // word designator after an explicit event designator (e.g. `!!3`). In
+    // other words, the colon is optional if the word designator starts with one
+    // of '^', '$', '%', '-', '*' or, in that special case, a digit.
     if chars[i].1 == ':' {
         i += 1;
         if i == chars.len() {
             return Some(i);
         }
-    } else if chars[i].1.is_ascii_digit() {
+    } else if chars[i].1.is_ascii_digit() && !allow_number_without_colon {
         return None;
     }
 
@@ -340,13 +358,14 @@ fn consume_history_expansion(chars: &[(usize, char)], mut i: usize) -> Option<us
     }
 
     // consume optional word designator
-    let word_designator_consumed = match consume_word_designator(chars, i) {
-        Some(j) => {
-            i = j;
-            true
-        }
-        None => false,
-    };
+    let word_designator_consumed =
+        match consume_word_designator(chars, i, event_designator_consumed) {
+            Some(j) => {
+                i = j;
+                true
+            }
+            None => false,
+        };
 
     if word_designator_consumed && i == chars.len() {
         return Some(i);
@@ -816,6 +835,7 @@ mod tests {
 
     #[test]
     fn word_designators() {
+        assert_expanded("!!3", &[vec![(0, 3)]]);
         assert_expanded("vi !!:0", &[vec![(3, 7)]]);
         assert_expanded("vi !!:20", &[vec![(3, 8)]]);
         assert_expanded("vi !!:20.bak", &[vec![(3, 8)]]);

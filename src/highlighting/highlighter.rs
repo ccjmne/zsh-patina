@@ -1618,6 +1618,9 @@ mod tests {
             ]
         );
 
+        let highlighted = cfg.highlight("!!3")?;
+        assert_eq!(highlighted, vec![cfg.static_span(0, 3, EXPANSION_HISTORY)?]);
+
         let highlighted = cfg.highlight("vi !!:20.bak")?;
         assert_eq!(
             highlighted,
