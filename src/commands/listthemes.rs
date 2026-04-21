@@ -16,10 +16,24 @@ use crate::{
 fn style_to_color_spec(style: Style) -> ColorSpec {
     let mut color_spec = ColorSpec::new();
     if let Some(fg) = &style.foreground {
-        color_spec.set_fg(Some(fg.into()));
+        match fg {
+            Color::Default => {
+                color_spec.set_fg(None);
+            }
+            _ => {
+                color_spec.set_fg(Some(fg.into()));
+            }
+        }
     }
     if let Some(bg) = &style.background {
-        color_spec.set_bg(Some(bg.into()));
+        match bg {
+            Color::Default => {
+                color_spec.set_bg(None);
+            }
+            _ => {
+                color_spec.set_bg(Some(bg.into()));
+            }
+        }
     }
     if style.bold {
         color_spec.set_bold(true);
@@ -57,10 +71,24 @@ where
             SpanStyle::Static(ref static_style) => {
                 let mut color_spec = ColorSpec::new();
                 if let Some(fg) = &static_style.foreground_color {
-                    color_spec.set_fg(Some(TermColor::from(Color::try_from(fg.as_str())?)));
+                    match Color::try_from(fg.as_str())? {
+                        Color::Default => {
+                            color_spec.set_fg(None);
+                        }
+                        c => {
+                            color_spec.set_fg(Some(TermColor::from(c)));
+                        }
+                    }
                 }
                 if let Some(bg) = &static_style.background_color {
-                    color_spec.set_bg(Some(TermColor::from(Color::try_from(bg.as_str())?)));
+                    match Color::try_from(bg.as_str())? {
+                        Color::Default => {
+                            color_spec.set_bg(None);
+                        }
+                        c => {
+                            color_spec.set_bg(Some(TermColor::from(c)));
+                        }
+                    }
                 }
                 if static_style.bold {
                     color_spec.set_bold(true);

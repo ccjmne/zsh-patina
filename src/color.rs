@@ -1,11 +1,12 @@
 use std::fmt::Formatter;
 
-use anyhow::{Context, Result, bail};
-use serde::{Deserialize, Deserializer, de::Visitor};
+use anyhow::{bail, Context, Result};
+use serde::{de::Visitor, Deserialize, Deserializer};
 use termcolor::Color as TermColor;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Color {
+    Default,
     Black,
     Red,
     Green,
@@ -48,6 +49,7 @@ impl TryFrom<&str> for Color {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value.to_ascii_lowercase().as_str() {
+            "-1" => Ok(Color::Default),
             "black" => Ok(Color::Black),
             "red" => Ok(Color::Red),
             "green" => Ok(Color::Green),
@@ -73,6 +75,7 @@ impl From<Color> for TermColor {
 impl From<&Color> for TermColor {
     fn from(value: &Color) -> Self {
         match value {
+            Color::Default => unreachable!("default colors are handled outside termcolor::Color"),
             Color::Black => TermColor::Black,
             Color::Red => TermColor::Red,
             Color::Green => TermColor::Green,
@@ -91,6 +94,7 @@ impl Color {
     /// Convert a Color to an ANSI color string
     pub fn to_ansi_color(self) -> String {
         match self {
+            Color::Default => "default".to_string(),
             Color::Black => "black".to_string(),
             Color::Red => "red".to_string(),
             Color::Green => "green".to_string(),
@@ -130,6 +134,9 @@ impl<'de> Deserialize<'de> for Color {
             where
                 E: serde::de::Error,
             {
+                if value == -1 {
+                    return Ok(Color::Default);
+                }
                 let value = u8::try_from(value).map_err(E::custom)?;
                 Ok(Color::Ansi256(value))
             }

@@ -4,6 +4,8 @@
 "b" = "#f00"
 "c" = "1"
 "d" = 1
+"d1" = "-1"
+"d2" = -1
 
 "e" = { foreground = "red" }
 "f" = { foreground = "#f00" }
@@ -14,10 +16,14 @@
 "j" = { background = "#f00" }
 "k" = { background = "1" }
 "l" = { background = 1 }
+"l1" = { background = "-1" }
+"l2" = { background = -1 }
 
 "m" = { foreground = 1, background = "red" }
+"m1" = { foreground = -1, background = "red" }
 "n" = { foreground = "1", background = "#f00" }
 "o" = { foreground = "red", background = "1" }
+"o1" = { foreground = "red", background = -1 }
 "p" = { foreground = "#f00", background = 1 }
 
 "q" = { foreground = 1, background = "red", bold = true }

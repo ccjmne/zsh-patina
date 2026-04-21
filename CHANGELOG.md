@@ -6,6 +6,7 @@ _Note: This project follows [Semantic Versioning]._
 
 **New features**
 
+- Allow using the pseudo color code `-1` in custom themes to reset foreground or background colors to the terminal default
 - Add kanagawa theme (contributed by @antinomie8 🥳)
 - Add install instructions for the Scoop package manager on Windows (contributed by @marovira 🎊)
 - Add support for dynamic highlighting of partial paths. This feature is disabled by default and can be activated in zsh-patina's [configuration].

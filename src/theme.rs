@@ -4,11 +4,11 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use rustc_hash::FxHashMap;
 use serde::{
+    de::{value::MapAccessDeserializer, Error, MapAccess, Visitor},
     Deserialize, Deserializer, Serialize, Serializer,
-    de::{Error, MapAccess, Visitor, value::MapAccessDeserializer},
 };
 use strum::EnumIter;
 use syntect::{
@@ -475,6 +475,14 @@ mod tests {
             theme.resolve("d").unwrap().foreground,
             Some(Color::Ansi256(1))
         );
+        assert_eq!(
+            theme.resolve("d1").unwrap().foreground,
+            Some(Color::Default)
+        );
+        assert_eq!(
+            theme.resolve("d2").unwrap().foreground,
+            Some(Color::Default)
+        );
 
         // foreground only
         assert_eq!(theme.resolve("e").unwrap().foreground, Some(Color::Red));
@@ -505,6 +513,14 @@ mod tests {
             theme.resolve("l").unwrap().background,
             Some(Color::Ansi256(1))
         );
+        assert_eq!(
+            theme.resolve("l1").unwrap().background,
+            Some(Color::Default)
+        );
+        assert_eq!(
+            theme.resolve("l2").unwrap().background,
+            Some(Color::Default)
+        );
 
         // foreground and background
         assert_eq!(
@@ -512,6 +528,11 @@ mod tests {
             Some(Color::Ansi256(1))
         );
         assert_eq!(theme.resolve("m").unwrap().background, Some(Color::Red));
+        assert_eq!(
+            theme.resolve("m1").unwrap().foreground,
+            Some(Color::Default)
+        );
+        assert_eq!(theme.resolve("m1").unwrap().background, Some(Color::Red));
         assert_eq!(
             theme.resolve("n").unwrap().foreground,
             Some(Color::Ansi256(1))
@@ -524,6 +545,11 @@ mod tests {
         assert_eq!(
             theme.resolve("o").unwrap().background,
             Some(Color::Ansi256(1))
+        );
+        assert_eq!(theme.resolve("o1").unwrap().foreground, Some(Color::Red));
+        assert_eq!(
+            theme.resolve("o1").unwrap().background,
+            Some(Color::Default)
         );
         assert_eq!(
             theme.resolve("p").unwrap().foreground,
