@@ -483,6 +483,10 @@ mod tests {
             theme.resolve("d2").unwrap().foreground,
             Some(Color::Default)
         );
+        assert_eq!(
+            theme.resolve("d3").unwrap().foreground,
+            Some(Color::Default)
+        );
 
         // foreground only
         assert_eq!(theme.resolve("e").unwrap().foreground, Some(Color::Red));
@@ -519,6 +523,10 @@ mod tests {
         );
         assert_eq!(
             theme.resolve("l2").unwrap().background,
+            Some(Color::Default)
+        );
+        assert_eq!(
+            theme.resolve("l3").unwrap().background,
             Some(Color::Default)
         );
 

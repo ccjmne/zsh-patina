@@ -377,7 +377,7 @@ Colors can be specified as:
 - One of the eight **ANSI colors**: `black`, `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`
 - A **hex color** in the format `#RRGGBB` (e.g. `"#a0a0a0"`) or `#RGB` (e.g. `"#f00"`)
 - An integer in the range `0-255` specifying an **8-bit ANSI color code**.
-- The pseudo color code `-1`, which resets the foreground or background to your terminal's default color.
+- The pseudo color code `-1`, or the named color `default`, which resets the foreground or background to your terminal's default color.
 
 ANSI color names use your terminal's color scheme, so the actual appearance depends on your terminal configuration. Hex colors are displayed as true colors (24-bit) if your terminal supports them.
 

@@ -49,7 +49,7 @@ impl TryFrom<&str> for Color {
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value.to_ascii_lowercase().as_str() {
-            "-1" => Ok(Color::Default),
+            "-1" | "default" => Ok(Color::Default),
             "black" => Ok(Color::Black),
             "red" => Ok(Color::Red),
             "green" => Ok(Color::Green),
